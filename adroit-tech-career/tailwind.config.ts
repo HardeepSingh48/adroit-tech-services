@@ -56,9 +56,9 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         sspl: {
-          red: "hsl(var(--sspl-red))",
-          "red-light": "hsl(var(--sspl-red-light))",
-          "red-dark": "hsl(var(--sspl-red-dark))",
+          blue: "hsl(var(--sspl-blue))",
+          "blue-light": "hsl(var(--sspl-blue-light))",
+          "blue-dark": "hsl(var(--sspl-blue-dark))",
           black: "hsl(var(--sspl-black))",
           "black-light": "hsl(var(--sspl-black-light))",
           white: "hsl(var(--sspl-white))",

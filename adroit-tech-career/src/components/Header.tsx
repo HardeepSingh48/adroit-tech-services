@@ -15,6 +15,7 @@ const Header = () => {
   const location = useLocation();
 
   const navLinks = [
+    { name: "Main Website", path: "/", isExternal: true },
     { name: "Home", path: "/" },
     { name: "Jobs", path: "/jobs" },
     { name: "About Us", path: "/about" },
@@ -44,19 +45,29 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`font-medium transition-colors hover:text-primary ${
-                isActive(link.path)
-                  ? "text-primary"
-                  : "text-secondary-foreground"
-              }`}
-            >
-              {link.name}
-            </Link>
-          ))}
+          {navLinks.map((link) => 
+            link.isExternal ? (
+              <a
+                key={link.name}
+                href={link.path}
+                className="font-medium transition-colors hover:text-primary text-secondary-foreground"
+              >
+                {link.name}
+              </a>
+            ) : (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`font-medium transition-colors hover:text-primary ${
+                  isActive(link.path)
+                    ? "text-primary"
+                    : "text-secondary-foreground"
+                }`}
+              >
+                {link.name}
+              </Link>
+            )
+          )}
         </nav>
 
         {/* Desktop CTA */}
@@ -115,20 +126,31 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-secondary border-t border-border/20 animate-slide-up">
           <nav className="container py-4 flex flex-col gap-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setIsMenuOpen(false)}
-                className={`py-3 px-4 rounded-lg font-medium transition-colors ${
-                  isActive(link.path)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-secondary-foreground hover:bg-secondary/80"
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
+            {navLinks.map((link) => 
+              link.isExternal ? (
+                <a
+                  key={link.name}
+                  href={link.path}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="py-3 px-4 rounded-lg font-medium transition-colors text-secondary-foreground hover:bg-secondary/80"
+                >
+                  {link.name}
+                </a>
+              ) : (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`py-3 px-4 rounded-lg font-medium transition-colors ${
+                    isActive(link.path)
+                      ? "bg-primary text-primary-foreground"
+                      : "text-secondary-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              )
+            )}
             <div className="pt-4 border-t border-border/20 mt-2 space-y-2">
               <Link to="/login" onClick={() => setIsMenuOpen(false)}>
                 <Button variant="outline" size="lg" className="w-full text-secondary-foreground border-secondary-foreground/30">

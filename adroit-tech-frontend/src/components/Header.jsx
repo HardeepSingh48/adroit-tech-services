@@ -22,7 +22,7 @@ const Header = () => {
     { name: "Home", path: "/" },
     { name: "About Us", path: "/about" },
     { name: "Services", path: "/services", hasDropdown: true },
-    { name: "Careers", path: "/careers" },
+    { name: "Careers", path: "/portal", isExternal: true },
     { name: "Contact", path: "/contact" },
   ];
 
@@ -115,6 +115,13 @@ const Header = () => {
                       )}
                     </AnimatePresence>
                   </div>
+                ) : link.isExternal ? (
+                  <a
+                    href={link.path}
+                    className={`${textColorClass} ${hoverColorClass} transition-all duration-300 font-semibold hover:scale-105 inline-block`}
+                  >
+                    {link.name}
+                  </a>
                 ) : (
                   <Link
                     to={link.path}
@@ -189,6 +196,14 @@ const Header = () => {
                           )}
                         </AnimatePresence>
                       </>
+                    ) : link.isExternal ? (
+                      <a
+                        href={link.path}
+                        className={`block py-3 ${textColorClass} ${hoverColorClass} transition-all duration-300 font-semibold`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {link.name}
+                      </a>
                     ) : (
                       <Link
                         to={link.path}

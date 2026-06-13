@@ -100,15 +100,14 @@ const Career = () => {
             <div className="text-center mt-16">
               <h3 className="text-2xl font-bold mb-4">How to Apply</h3>
               <p className="text-muted-foreground text-lg mb-6">
-                Interested candidates can send their resume to our HR
-                department.
+                Visit our Career Portal to view open positions, register your profile, and apply for jobs online.
               </p>
               <a
-                href="mailto:hr@adroittech.com"
-                className="inline-flex items-center space-x-2 text-secondary font-medium"
+                href="/portal"
+                className="inline-flex items-center justify-center bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <Mail className="w-5 h-5" />
-                <span>hr@adroittech.com</span>
+                <Briefcase className="w-5 h-5 mr-2" />
+                <span>Open Career Portal</span>
               </a>
             </div>
           </div>
