@@ -30,8 +30,11 @@ const Header = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 md:gap-3">
           <div className="relative">
-            <Shield className="h-8 w-8 md:h-10 md:w-10 text-primary" />
-            <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full" />
+            <img
+              src="/assets/logos/ATS_logo.png"
+              alt="Adroit Tech Logo"
+              className="h-8 w-auto md:h-10 transition-all duration-300"
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-display text-lg md:text-2xl font-bold text-primary-foreground tracking-wider">
