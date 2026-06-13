@@ -15,10 +15,10 @@ const portalOutputDir = path.resolve(outputDir, 'portal');
 function build() {
   try {
     console.log('Building main website (adroit-tech-frontend)...');
-    execSync('npm run build', { cwd: frontendDir, stdio: 'inherit' });
+    execSync('npm run build', { cwd: frontendDir, stdio: 'inherit', shell: true });
 
     console.log('Building career portal (adroit-tech-career)...');
-    execSync('npm run build', { cwd: careerDir, stdio: 'inherit' });
+    execSync('npm run build', { cwd: careerDir, stdio: 'inherit', shell: true });
 
     console.log('Cleaning and structuring unified root output directory...');
     
