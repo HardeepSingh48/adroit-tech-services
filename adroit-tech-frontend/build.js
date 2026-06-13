@@ -14,7 +14,7 @@ const portalOutputDir = path.resolve(outputDir, 'portal');
 function build() {
   try {
     console.log('Building main website (adroit-tech-frontend)...');
-    execSync('npm run build', { cwd: frontendDir, stdio: 'inherit' });
+    execSync('npx vite build', { cwd: frontendDir, stdio: 'inherit' });
 
     console.log('Building career portal (adroit-tech-career)...');
     execSync('npm run build', { cwd: careerDir, stdio: 'inherit' });
