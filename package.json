@@ -3,8 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "workspaces": [
+    "adroit-tech-frontend",
+    "adroit-tech-career"
+  ],
   "scripts": {
-    "install-deps": "npm install --prefix adroit-tech-frontend && npm install --prefix adroit-tech-career",
-    "build": "npm run install-deps && node build.js"
+    "build": "node build.js"
   }
 }
