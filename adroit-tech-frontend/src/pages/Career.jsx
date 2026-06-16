@@ -4,6 +4,8 @@ import Footer from "@/components/Footer";
 import { Briefcase, MapPin, Mail } from "lucide-react";
 
 const Career = () => {
+  const careerPortalUrl = import.meta.env.VITE_CAREER_PORTAL_URL || "https://adroit-tech-career.vercel.app";
+
   const jobOpenings = [
     {
       title: "Security Guard",
@@ -103,7 +105,7 @@ const Career = () => {
                 Visit our Career Portal to view open positions, register your profile, and apply for jobs online.
               </p>
               <a
-                href="/portal"
+                href={careerPortalUrl}
                 className="inline-flex items-center justify-center bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Briefcase className="w-5 h-5 mr-2" />
