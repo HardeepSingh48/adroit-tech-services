@@ -18,11 +18,13 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const careerPortalUrl = import.meta.env.VITE_CAREER_PORTAL_URL || "https://adroit-tech-career.vercel.app";
+
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "About Us", path: "/about" },
     { name: "Services", path: "/services", hasDropdown: true },
-    { name: "Careers", path: "/portal", isExternal: true },
+    { name: "Careers", path: careerPortalUrl, isExternal: true },
     { name: "Contact", path: "/contact" },
   ];
 

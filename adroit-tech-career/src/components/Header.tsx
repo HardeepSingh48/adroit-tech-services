@@ -14,8 +14,10 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
 
+  const mainWebsiteUrl = import.meta.env.VITE_MAIN_WEBSITE_URL || "https://adroit-tech-frontend.vercel.app";
+
   const navLinks = [
-    { name: "Main Website", path: "/", isExternal: true },
+    { name: "Main Website", path: mainWebsiteUrl, isExternal: true },
     { name: "Home", path: "/" },
     { name: "Jobs", path: "/jobs" },
     { name: "About Us", path: "/about" },
