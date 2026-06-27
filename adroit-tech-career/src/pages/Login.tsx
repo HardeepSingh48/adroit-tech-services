@@ -5,21 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import {
-  Mail,
-  Lock,
-  User,
-  Building2,
-  AlertCircle,
-} from "lucide-react";
+import { Mail, Lock, AlertCircle, User, Briefcase, LogIn } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [activeTab, setActiveTab] = useState<"jobseeker" | "employer">("jobseeker");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [formData, setFormData] = useState({
@@ -44,20 +36,21 @@ const Login = () => {
       if (res.success) {
         toast({
           title: "Login Successful!",
-          description: `Welcome back! Redirecting...`,
+          description: `Welcome back to Adroit Tech Services.`,
         });
 
-        if (res.data?.user?.role === "EMPLOYER" || activeTab === "employer") {
-          navigate("/employer/dashboard");
-        } else if (res.data?.user?.role === "ADMIN") {
+        const role = res.data?.user?.role;
+        if (role === "ADMIN") {
           navigate("/admin/dashboard");
+        } else if (role === "EMPLOYER") {
+          navigate("/employer/dashboard");
         } else {
           navigate("/jobs");
         }
       }
     } catch (err: unknown) {
       setIsSubmitting(false);
-      const message = err instanceof Error ? err.message : "Invalid credentials. Please try again.";
+      const message = err instanceof Error ? err.message : "Invalid credentials. Please check your email/phone and password.";
       setErrorMessage(message);
       toast({
         title: "Login Failed",
@@ -70,7 +63,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 gradient-hero py-12 md:py-20">
+      <main className="flex-1 gradient-hero py-12 md:py-20 flex items-center justify-center">
         <div className="container">
           <div className="max-w-md mx-auto">
             {/* Header */}
@@ -79,193 +72,110 @@ const Login = () => {
                 <img src="/assets/logos/ATS shield icon 512.png" alt="Adroit Tech Logo" className="h-10 w-auto object-contain" />
               </div>
               <h1 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
-                Welcome Back
+                Portal Login
               </h1>
-              <p className="text-primary-foreground/70">
-                Login to your Adroit Tech Services account
+              <p className="text-primary-foreground/70 text-sm">
+                Single sign-in for Job Seekers, Employers, and Administrators
               </p>
             </div>
 
             {/* Login Card */}
-            <div className="bg-card rounded-2xl p-6 md:p-8 shadow-card">
+            <div className="bg-card rounded-2xl p-6 md:p-8 shadow-card border border-border">
               {errorMessage && (
                 <div className="p-4 mb-6 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-3 text-destructive animate-fade-in">
                   <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
                   <div className="text-sm font-medium leading-relaxed">{errorMessage}</div>
                 </div>
               )}
-              <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as "jobseeker" | "employer"); setErrorMessage(""); }} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted">
-                  <TabsTrigger 
-                    value="jobseeker" 
-                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"
-                  >
-                    <User className="h-4 w-4" />
-                    Job Seeker
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="employer"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"
-                  >
-                    <Building2 className="h-4 w-4" />
-                    Employer
-                  </TabsTrigger>
-                </TabsList>
 
-                <TabsContent value="jobseeker">
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                      <Label htmlFor="email-js" className="flex items-center gap-2 mb-2">
-                        <Mail className="h-4 w-4 text-primary" />
-                        Email / Phone
-                      </Label>
-                      <Input
-                        id="email-js"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="Enter email or phone number"
-                        className="border-border focus:border-primary h-12"
-                      />
-                    </div>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <Label htmlFor="email" className="flex items-center gap-2 mb-2 text-foreground font-medium">
+                    <Mail className="h-4 w-4 text-primary" />
+                    Email Address or Phone Number
+                  </Label>
+                  <Input
+                    id="email"
+                    type="text"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Enter registered email or phone"
+                    className="border-border focus:border-primary h-12"
+                  />
+                </div>
 
-                    <div>
-                      <Label htmlFor="password-js" className="flex items-center gap-2 mb-2">
-                        <Lock className="h-4 w-4 text-primary" />
-                        Password
-                      </Label>
-                      <Input
-                        id="password-js"
-                        type="password"
-                        required
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        placeholder="Enter your password"
-                        className="border-border focus:border-primary h-12"
-                      />
-                    </div>
+                <div>
+                  <Label htmlFor="password" className="flex items-center gap-2 mb-2 text-foreground font-medium">
+                    <Lock className="h-4 w-4 text-primary" />
+                    Password
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Enter your account password"
+                    className="border-border focus:border-primary h-12"
+                  />
+                </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="remember-js"
-                          checked={formData.rememberMe}
-                          onCheckedChange={(checked) =>
-                            setFormData({ ...formData, rememberMe: checked as boolean })
-                          }
-                        />
-                        <label
-                          htmlFor="remember-js"
-                          className="text-sm text-muted-foreground cursor-pointer"
-                        >
-                          Remember me
-                        </label>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      variant="cta"
-                      size="xl"
-                      className="w-full"
-                      disabled={isSubmitting}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember"
+                      checked={formData.rememberMe}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, rememberMe: checked as boolean })
+                      }
+                    />
+                    <label
+                      htmlFor="remember"
+                      className="text-sm text-muted-foreground cursor-pointer"
                     >
-                      {isSubmitting ? (
-                        <>
-                          <div className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
-                          Logging in...
-                        </>
-                      ) : (
-                        <>Login as Job Seeker</>
-                      )}
-                    </Button>
+                      Remember me
+                    </label>
+                  </div>
+                </div>
 
-                    <p className="text-center text-muted-foreground text-sm">
-                      New job seeker?{" "}
-                      <Link to="/register/jobseeker" className="text-primary font-semibold hover:underline">
-                        Register here
-                      </Link>
-                    </p>
-                  </form>
-                </TabsContent>
+                <Button
+                  type="submit"
+                  variant="cta"
+                  size="xl"
+                  className="w-full mt-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                      Authenticating...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="h-5 w-5 mr-2" />
+                      Sign In
+                    </>
+                  )}
+                </Button>
 
-                <TabsContent value="employer">
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                      <Label htmlFor="email-emp" className="flex items-center gap-2 mb-2">
-                        <Mail className="h-4 w-4 text-primary" />
-                        Email Address / Phone
-                      </Label>
-                      <Input
-                        id="email-emp"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="Enter your company email or phone"
-                        className="border-border focus:border-primary h-12"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="password-emp" className="flex items-center gap-2 mb-2">
-                        <Lock className="h-4 w-4 text-primary" />
-                        Password
-                      </Label>
-                      <Input
-                        id="password-emp"
-                        type="password"
-                        required
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        placeholder="Enter your password"
-                        className="border-border focus:border-primary h-12"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="remember-emp"
-                          checked={formData.rememberMe}
-                          onCheckedChange={(checked) =>
-                            setFormData({ ...formData, rememberMe: checked as boolean })
-                          }
-                        />
-                        <label
-                          htmlFor="remember-emp"
-                          className="text-sm text-muted-foreground cursor-pointer"
-                        >
-                          Remember me
-                        </label>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      variant="cta"
-                      size="xl"
-                      className="w-full"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
-                          Logging in...
-                        </>
-                      ) : (
-                        <>Login as Employer</>
-                      )}
-                    </Button>
-
-                    <p className="text-center text-muted-foreground text-sm">
-                      New employer?{" "}
-                      <Link to="/register/employer" className="text-primary font-semibold hover:underline">
-                        Register here
-                      </Link>
-                    </p>
-                  </form>
-                </TabsContent>
-              </Tabs>
+                <div className="pt-6 border-t border-border mt-6 text-center space-y-3">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                    Don't have an account yet?
+                  </p>
+                  <div className="flex items-center justify-center gap-4 flex-wrap text-sm">
+                    <Link to="/register/jobseeker" className="text-primary font-semibold hover:underline inline-flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      Register as Job Seeker
+                    </Link>
+                    <span className="text-muted-foreground">•</span>
+                    <Link to="/register/employer" className="text-primary font-semibold hover:underline inline-flex items-center gap-1">
+                      <Briefcase className="h-4 w-4" />
+                      Register as Employer
+                    </Link>
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </div>

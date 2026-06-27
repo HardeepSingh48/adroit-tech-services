@@ -18,6 +18,7 @@ import {
   Star,
   Plus,
   X,
+  AlertCircle,
 } from "lucide-react";
 
 const educationLevels = [
@@ -40,6 +41,7 @@ const benefitsList = [
 const PostJob = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     category: "Commercial Security",
@@ -166,6 +168,7 @@ const PostJob = () => {
     } catch (err: unknown) {
       setIsSubmitting(false);
       const message = err instanceof Error ? err.message : "Could not post job listing. Please check required fields.";
+      setErrorMessage(message);
       toast({
         title: "Posting Failed",
         description: message,
@@ -177,6 +180,12 @@ const PostJob = () => {
   return (
     <EmployerLayout>
       <div className="max-w-4xl mx-auto">
+        {errorMessage && (
+          <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-3 text-destructive animate-fade-in">
+            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+            <div className="text-sm font-medium leading-relaxed">{errorMessage}</div>
+          </div>
+        )}
         <div className="mb-6">
           <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
             Post a New Job

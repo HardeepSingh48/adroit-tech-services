@@ -90,7 +90,7 @@ const Header = () => {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="text-secondary-foreground border-secondary-foreground/30">
+                <Button variant="outline" size="sm" className="text-primary border-secondary-foreground/30">
                   <User className="h-4 w-4 mr-2" />
                   {user.email || user.phone || 'Account'}
                   <ChevronDown className="h-4 w-4 ml-1" />
@@ -145,7 +145,7 @@ const Header = () => {
           ) : (
             <>
               <Link to="/login">
-                <Button variant="ghost" size="sm" className="text-secondary-foreground hover:text-primary">
+                <Button variant="ghost" size="sm" className="text-secondary-foreground hover:text-white">
                   <LogIn className="h-4 w-4 mr-2" />
                   Login
                 </Button>
