@@ -1,18 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import EmployerLayout from "@/components/employer/EmployerLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { jobs } from "@/data/jobs";
 import { toast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/api";
+import { AppJob } from "@/types/app.types";
 import {
   Search,
   Plus,
   Eye,
-  Edit,
   XCircle,
-  Copy,
   Users,
   MapPin,
   IndianRupee,
@@ -27,40 +26,59 @@ import {
 
 const EmployerJobs = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "closed" | "draft">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [myJobs, setMyJobs] = useState<AppJob[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Add status to jobs for demo
-  const jobsWithStatus = jobs.map((job, index) => ({
-    ...job,
-    status: index % 3 === 0 ? "closed" : index % 5 === 0 ? "draft" : "active" as "active" | "closed" | "draft",
-    applications: Math.floor(Math.random() * 30) + 5,
-  }));
+  const fetchJobs = async () => {
+    try {
+      const res = await apiRequest<AppJob[]>('/employers/jobs');
+      if (res.success && res.data) {
+        setMyJobs(res.data);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const filteredJobs = jobsWithStatus.filter((job) => {
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const filteredJobs = myJobs.filter((job) => {
     const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || job.status === statusFilter;
+      (job.city || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || (job.status || '').toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
-  const handleCloseJob = (id: string) => {
-    toast({
-      title: "Job Closed",
-      description: "The job listing has been closed.",
-    });
+  const handleCloseJob = async (id: string) => {
+    try {
+      await apiRequest(`/jobs/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'CLOSED' }),
+      });
+      toast({
+        title: "Job Closed",
+        description: "The job listing status has been changed to CLOSED.",
+      });
+      fetchJobs();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Could not close job.";
+      toast({
+        title: "Update Failed",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDuplicate = (id: string) => {
-    toast({
-      title: "Job Duplicated",
-      description: "A copy of the job has been created as a draft.",
-    });
-  };
-
-  const statusColors = {
-    active: "bg-green-100 text-green-800 border-green-200",
-    closed: "bg-muted text-muted-foreground border-border",
-    draft: "bg-amber-100 text-amber-800 border-amber-200",
+  const statusColors: Record<string, string> = {
+    ACTIVE: "bg-green-100 text-green-800 border-green-200",
+    CLOSED: "bg-muted text-muted-foreground border-border",
+    DRAFT: "bg-amber-100 text-amber-800 border-amber-200",
   };
 
   return (
@@ -116,7 +134,11 @@ const EmployerJobs = () => {
 
         {/* Jobs List */}
         <div className="space-y-4">
-          {filteredJobs.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : filteredJobs.length > 0 ? (
             filteredJobs.map((job) => (
               <div
                 key={job.id}
@@ -130,10 +152,10 @@ const EmployerJobs = () => {
                           <h3 className="font-display text-xl font-bold text-foreground">
                             {job.title}
                           </h3>
-                          <Badge className={statusColors[job.status]}>
+                          <Badge className={statusColors[job.status || 'ACTIVE'] || statusColors.ACTIVE}>
                             {job.status}
                           </Badge>
-                          {job.featured && (
+                          {job.isFeatured && (
                             <Badge className="bg-amber-100 text-amber-800 border-amber-200">
                               Featured
                             </Badge>
@@ -142,17 +164,16 @@ const EmployerJobs = () => {
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mt-2">
                           <span className="flex items-center gap-1">
                             <MapPin className="h-4 w-4" />
-                            {job.location}
+                            {job.city}
                           </span>
                           <span className="flex items-center gap-1">
                             <IndianRupee className="h-4 w-4" />
-                            {job.salary}
+                            ₹{job.salaryMin?.toLocaleString()} - ₹{job.salaryMax?.toLocaleString()}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-4 w-4" />
-                            {job.applications} applications
+                            {job.applicationCount || 0} applications
                           </span>
-                          <span>Posted: {job.postedDate}</span>
                         </div>
                       </div>
                     </div>
@@ -178,15 +199,7 @@ const EmployerJobs = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-popover">
-                        <DropdownMenuItem>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Job
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicate(job.id)}>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        {job.status === "active" && (
+                        {job.status === "ACTIVE" && (
                           <DropdownMenuItem
                             onClick={() => handleCloseJob(job.id)}
                             className="text-destructive"

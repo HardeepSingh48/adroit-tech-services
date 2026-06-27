@@ -2,14 +2,21 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, Briefcase, IndianRupee, Calendar, Star } from "lucide-react";
-import { Job } from "@/data/jobs";
+import { AppJob } from "@/types/app.types";
 
 interface JobCardProps {
-  job: Job;
+  job: AppJob;
   featured?: boolean;
 }
 
 const JobCard = ({ job, featured }: JobCardProps) => {
+  const location = job.city || job.location || 'Delhi NCR';
+  const salary = job.salary || (job.salaryMin ? `₹${job.salaryMin.toLocaleString()} - ₹${job.salaryMax?.toLocaleString()}/mo` : 'Competitive');
+  const shift = job.shift || 'Rotational';
+  const experience = job.experienceLevel || job.experience || 'Fresher';
+  const postedDate = job.publishedAt || job.createdAt || job.postedDate || new Date().toISOString();
+  const isFeatured = featured || job.isFeatured || job.featured;
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -23,9 +30,9 @@ const JobCard = ({ job, featured }: JobCardProps) => {
   };
 
   return (
-    <div className={`card-job rounded-xl p-5 md:p-6 relative group ${featured ? "border-primary" : ""}`}>
+    <div className={`card-job rounded-xl p-5 md:p-6 relative group ${isFeatured ? "border-primary" : ""}`}>
       {/* Featured Badge */}
-      {featured && (
+      {isFeatured && (
         <div className="absolute -top-3 left-4">
           <Badge className="bg-primary text-primary-foreground gap-1">
             <Star className="h-3 w-3" fill="currentColor" />
@@ -43,7 +50,7 @@ const JobCard = ({ job, featured }: JobCardProps) => {
             </h3>
             <div className="flex items-center gap-2 mt-1 text-muted-foreground">
               <MapPin className="h-4 w-4 text-primary" />
-              <span className="text-sm">{job.location}</span>
+              <span className="text-sm">{location}</span>
             </div>
           </div>
           <Badge variant="outline" className="shrink-0">
@@ -55,19 +62,19 @@ const JobCard = ({ job, featured }: JobCardProps) => {
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <IndianRupee className="h-4 w-4 text-primary" />
-            <span>{job.salary}</span>
+            <span>{salary}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4 text-primary" />
-            <span>{job.shift} Shift</span>
+            <span>{shift} Shift</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Briefcase className="h-4 w-4 text-primary" />
-            <span>{job.experience}</span>
+            <span>{experience}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4 text-primary" />
-            <span>{formatDate(job.postedDate)}</span>
+            <span>{formatDate(postedDate)}</span>
           </div>
         </div>
 

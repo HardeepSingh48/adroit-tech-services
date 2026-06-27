@@ -63,7 +63,7 @@ const Header = () => {
             <motion.img
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              src="/assets/logos/social-post.png"
+              src="/assets/logos/ATS shield icon 512.png"
               alt="Adroit Tech Logo"
               className="h-10 w-auto transition-all duration-300"
             />

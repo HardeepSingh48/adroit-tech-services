@@ -5,73 +5,87 @@ import Footer from "@/components/Footer";
 import JobCard from "@/components/JobCard";
 import JobFilters from "@/components/JobFilters";
 import { Button } from "@/components/ui/button";
-import { jobs } from "@/data/jobs";
-import { Search, SlidersHorizontal, X, Grid, List } from "lucide-react";
+import { jobs as mockJobs } from "@/data/jobs";
+import { apiRequest } from "@/lib/api";
+import { AppJob } from "@/types/app.types";
+import { Search, SlidersHorizontal, Grid, List } from "lucide-react";
 
 const Jobs = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("newest");
+  const [liveJobs, setLiveJobs] = useState<AppJob[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [filters, setFilters] = useState({
     city: searchParams.get("city") || "",
     type: [] as string[],
     shift: [] as string[],
     experience: searchParams.get("experience") || "",
-    salaryRange: [10000, 40000] as [number, number],
+    salaryRange: [10000, 50000] as [number, number],
   });
 
-  // Filter and sort jobs
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const res = await apiRequest<AppJob[]>('/jobs');
+        if (res.success && res.data && res.data.length > 0) {
+          setLiveJobs(res.data);
+        } else {
+          setLiveJobs(mockJobs);
+        }
+      } catch {
+        setLiveJobs(mockJobs);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
+
   const filteredJobs = useMemo(() => {
-    let result = jobs.filter((job) => {
-      // Search query
+    const result = liveJobs.filter((job) => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        if (
-          !job.title.toLowerCase().includes(query) &&
-          !job.description.toLowerCase().includes(query) &&
-          !job.location.toLowerCase().includes(query)
-        ) {
+        const title = (job.title || '').toLowerCase();
+        const desc = (job.description || '').toLowerCase();
+        const city = (job.city || job.location || '').toLowerCase();
+        if (!title.includes(query) && !desc.includes(query) && !city.includes(query)) {
           return false;
         }
       }
 
-      // City filter
-      if (filters.city && job.city !== filters.city) return false;
+      if (filters.city) {
+        const jobCity = (job.city || job.location || '').toLowerCase();
+        if (jobCity !== filters.city.toLowerCase()) return false;
+      }
 
-      // Type filter
       if (filters.type.length > 0 && !filters.type.includes(job.type)) return false;
 
-      // Shift filter
-      if (filters.shift.length > 0 && !filters.shift.includes(job.shift)) return false;
-
-      // Experience filter
-      if (filters.experience && job.experience !== filters.experience) return false;
-
-      // Salary range
-      if (job.salaryMin < filters.salaryRange[0] || job.salaryMax > filters.salaryRange[1]) {
-        return false;
+      if (filters.shift.length > 0) {
+        const jShift = job.shift || 'Rotational';
+        if (!filters.shift.includes(jShift)) return false;
       }
 
       return true;
     });
 
-    // Sort
     switch (sortBy) {
       case "newest":
-        result.sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
+        result.sort((a, b) => new Date(b.createdAt || b.postedDate || 0).getTime() - new Date(a.createdAt || a.postedDate || 0).getTime());
         break;
       case "salary-high":
-        result.sort((a, b) => b.salaryMax - a.salaryMax);
+        result.sort((a, b) => (b.salaryMax || 0) - (a.salaryMax || 0));
         break;
       case "salary-low":
-        result.sort((a, b) => a.salaryMin - b.salaryMin);
+        result.sort((a, b) => (a.salaryMin || 0) - (b.salaryMin || 0));
         break;
     }
 
     return result;
-  }, [searchQuery, filters, sortBy]);
+  }, [searchQuery, filters, sortBy, liveJobs]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -157,7 +171,11 @@ const Jobs = () => {
               </div>
 
               {/* Jobs Grid/List */}
-              {filteredJobs.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center py-16">
+                  <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : filteredJobs.length > 0 ? (
                 <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-4"}>
                   {filteredJobs.map((job) => (
                     <JobCard key={job.id} job={job} />

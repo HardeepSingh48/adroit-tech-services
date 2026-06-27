@@ -4,7 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Upload, User, Phone, Mail, MapPin, Calendar, FileText, CheckCircle } from "lucide-react";
+import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { User, Phone, Mail, MapPin, FileText, CheckCircle } from "lucide-react";
 
 interface ApplicationFormProps {
   jobTitle: string;
@@ -12,32 +15,63 @@ interface ApplicationFormProps {
 }
 
 const ApplicationForm = ({ jobTitle, jobId }: ApplicationFormProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [appId, setAppId] = useState<string>('');
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
-    dob: "",
     address: "",
     experience: "",
-    availability: "",
-    resume: null as File | null,
+    availability: "immediate",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login or register as a job seeker to apply.",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const res = await apiRequest<{ id: string }>(`/jobs/${jobId}/applications`, {
+        method: 'POST',
+        body: JSON.stringify({
+          availability: formData.availability || "immediate",
+          coverNote: `Address: ${formData.address}`,
+          experienceNote: formData.experience,
+        }),
+      });
 
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    toast({
-      title: "Application Submitted!",
-      description: "Our team will review your application within 24-48 hours.",
-    });
+      setIsSubmitting(false);
+
+      if (res.success) {
+        setIsSubmitted(true);
+        setAppId(res.data?.id || `APP-${jobId}`);
+        toast({
+          title: "Application Submitted!",
+          description: "Our team will review your application within 24-48 hours.",
+        });
+      }
+    } catch (err: unknown) {
+      setIsSubmitting(false);
+      const message = err instanceof Error ? err.message : "Could not submit application. You may have already applied.";
+      toast({
+        title: "Submission Failed",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
 
   if (isSubmitted) {
@@ -50,10 +84,10 @@ const ApplicationForm = ({ jobTitle, jobId }: ApplicationFormProps) => {
           Application Submitted!
         </h3>
         <p className="text-muted-foreground mb-6">
-          Thank you for applying. Our team will review your application and contact you within 24-48 hours.
+          Thank you for applying for {jobTitle}. Our team will review your application and contact you soon.
         </p>
         <p className="text-sm text-muted-foreground">
-          Application ID: <span className="font-mono text-primary">APP-{jobId}-{Date.now().toString(36).toUpperCase()}</span>
+          Application Reference: <span className="font-mono text-primary">{appId}</span>
         </p>
       </div>
     );
@@ -110,22 +144,6 @@ const ApplicationForm = ({ jobTitle, jobId }: ApplicationFormProps) => {
             className="border-border focus:border-primary"
           />
         </div>
-
-        {/* DOB */}
-        <div>
-          <Label htmlFor="dob" className="flex items-center gap-2 mb-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            Date of Birth *
-          </Label>
-          <Input
-            id="dob"
-            type="date"
-            required
-            value={formData.dob}
-            onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-            className="border-border focus:border-primary"
-          />
-        </div>
       </div>
 
       {/* Address */}
@@ -171,35 +189,11 @@ const ApplicationForm = ({ jobTitle, jobId }: ApplicationFormProps) => {
           onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
           className="w-full px-4 py-2.5 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
         >
-          <option value="">Select availability</option>
           <option value="immediate">Immediately</option>
           <option value="1-week">Within 1 week</option>
           <option value="2-weeks">Within 2 weeks</option>
           <option value="1-month">Within 1 month</option>
         </select>
-      </div>
-
-      {/* Resume Upload */}
-      <div>
-        <Label className="flex items-center gap-2 mb-2">
-          <Upload className="h-4 w-4 text-primary" />
-          Upload Resume/Photo
-        </Label>
-        <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            onChange={(e) => setFormData({ ...formData, resume: e.target.files?.[0] || null })}
-            className="hidden"
-            id="resume-upload"
-          />
-          <label htmlFor="resume-upload" className="cursor-pointer">
-            <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">
-              {formData.resume ? formData.resume.name : "Click to upload PDF, JPG, or PNG"}
-            </p>
-          </label>
-        </div>
       </div>
 
       {/* Submit Button */}

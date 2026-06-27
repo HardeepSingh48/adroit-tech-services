@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 interface EmployerLayoutProps {
   children: React.ReactNode;
@@ -31,10 +32,12 @@ const EmployerLayout = ({ children }: EmployerLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",
@@ -63,7 +66,7 @@ const EmployerLayout = ({ children }: EmployerLayoutProps) => {
           <div className="p-4 border-b border-border/10">
             <Link to="/" className="flex items-center gap-3">
               <div className="relative">
-                <Shield className="h-8 w-8 text-primary" />
+                <img src="/assets/logos/ATS shield icon 512.png" alt="Adroit Tech Logo" className="h-8 w-auto object-contain" />
                 <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full" />
               </div>
               <div className="flex flex-col">

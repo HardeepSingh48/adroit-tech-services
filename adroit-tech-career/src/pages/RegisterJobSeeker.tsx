@@ -6,44 +6,75 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import {
   User,
   Phone,
   Mail,
   MapPin,
   Lock,
-  Upload,
   CheckCircle,
-  Shield,
   Briefcase,
+  AlertCircle,
 } from "lucide-react";
 
 const RegisterJobSeeker = () => {
+  const { registerJobSeeker } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
     password: "",
     location: "",
-    experience: "",
-    photo: null as File | null,
+    experience: "FRESHER",
   });
+
+  const mapExperience = (val: string) => {
+    switch (val) {
+      case "0-1": return "ZERO_TO_ONE";
+      case "1-3": return "ONE_TO_THREE";
+      case "3+": return "THREE_PLUS";
+      default: return "FRESHER";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage("");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const res = await registerJobSeeker({
+        fullName: formData.name,
+        phone: formData.phone || undefined,
+        email: formData.email || undefined,
+        password: formData.password,
+        preferredCity: formData.location || undefined,
+        experience: mapExperience(formData.experience),
+      });
 
-    setIsSubmitting(false);
-    setIsSuccess(true);
-    toast({
-      title: "Registration Successful!",
-      description: "Welcome to Adroit Tech Services. You can now apply for jobs.",
-    });
+      setIsSubmitting(false);
+
+      if (res.success) {
+        setIsSuccess(true);
+        toast({
+          title: "Registration Successful!",
+          description: "Welcome to Adroit Tech Services. You can now apply for jobs.",
+        });
+      }
+    } catch (err: unknown) {
+      setIsSubmitting(false);
+      const message = err instanceof Error ? err.message : "Could not complete registration.";
+      setErrorMessage(message);
+      toast({
+        title: "Registration Failed",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
 
   if (isSuccess) {
@@ -59,11 +90,11 @@ const RegisterJobSeeker = () => {
               Welcome to Adroit Tech Services!
             </h1>
             <p className="text-muted-foreground mb-8">
-              Your account has been created successfully. Start exploring job opportunities now.
+              Your account has been created successfully. Please log in with your credentials to access your profile and apply for jobs.
             </p>
-            <Link to="/jobs">
+            <Link to="/login">
               <Button variant="cta" size="xl" className="w-full">
-                Browse Jobs
+                Proceed to Login
               </Button>
             </Link>
           </div>
@@ -82,7 +113,7 @@ const RegisterJobSeeker = () => {
             {/* Header */}
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-                <Shield className="h-8 w-8 text-primary" />
+                <img src="/assets/logos/ATS shield icon 512.png" alt="Adroit Tech Logo" className="h-10 w-auto object-contain" />
               </div>
               <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
                 Register as Job Seeker
@@ -95,6 +126,12 @@ const RegisterJobSeeker = () => {
             {/* Registration Form */}
             <div className="bg-card rounded-2xl p-6 md:p-10 shadow-card">
               <form onSubmit={handleSubmit} className="space-y-6">
+                {errorMessage && (
+                  <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-3 text-destructive animate-fade-in">
+                    <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+                    <div className="text-sm font-medium leading-relaxed">{errorMessage}</div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Name */}
                   <div className="md:col-span-2">
@@ -196,37 +233,11 @@ const RegisterJobSeeker = () => {
                       onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
                       className="w-full h-12 px-4 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                     >
-                      <option value="">Select experience</option>
                       <option value="fresher">Fresher</option>
                       <option value="0-1">0-1 years</option>
                       <option value="1-3">1-3 years</option>
                       <option value="3+">3+ years</option>
                     </select>
-                  </div>
-
-                  {/* Photo Upload */}
-                  <div className="md:col-span-2">
-                    <Label className="flex items-center gap-2 mb-2">
-                      <Upload className="h-4 w-4 text-primary" />
-                      Upload Photo
-                    </Label>
-                    <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors cursor-pointer">
-                      <input
-                        type="file"
-                        accept=".jpg,.jpeg,.png"
-                        onChange={(e) =>
-                          setFormData({ ...formData, photo: e.target.files?.[0] || null })
-                        }
-                        className="hidden"
-                        id="photo-upload"
-                      />
-                      <label htmlFor="photo-upload" className="cursor-pointer">
-                        <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">
-                          {formData.photo ? formData.photo.name : "Click to upload your photo (JPG, PNG)"}
-                        </p>
-                      </label>
-                    </div>
                   </div>
                 </div>
 
@@ -249,14 +260,7 @@ const RegisterJobSeeker = () => {
                 </Button>
 
                 <p className="text-sm text-muted-foreground text-center">
-                  By registering, you agree to our{" "}
-                  <Link to="/terms" className="text-primary hover:underline">
-                    Terms & Conditions
-                  </Link>{" "}
-                  and{" "}
-                  <Link to="/privacy" className="text-primary hover:underline">
-                    Privacy Policy
-                  </Link>
+                  By registering, you agree to our Terms & Conditions and Privacy Policy.
                 </p>
 
                 {/* Employer Link */}

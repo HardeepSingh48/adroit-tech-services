@@ -9,7 +9,7 @@ const Footer = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-3">
-              <Shield className="h-10 w-10 text-primary" />
+              <img src="/assets/logos/ATS shield icon 512.png" alt="Adroit Tech Logo" className="h-10 w-auto object-contain" />
               <div className="flex flex-col">
                 <span className="font-display text-2xl font-bold text-primary-foreground tracking-wider">
                   Adroit

@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EmployerLayout from "@/components/employer/EmployerLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { mockEmployer, industryTypes, companySizes } from "@/data/employers";
+import { apiRequest } from "@/lib/api";
+import { AppEmployerProfile } from "@/types/app.types";
+import { industryTypes } from "@/data/employers";
 import {
   Building2,
   User,
@@ -14,20 +16,20 @@ import {
   MapPin,
   Lock,
   Bell,
-  Trash2,
   Save,
 } from "lucide-react";
 
 const Settings = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [companyInfo, setCompanyInfo] = useState({
-    companyName: mockEmployer.companyName,
-    contactPerson: mockEmployer.contactPerson,
-    email: mockEmployer.email,
-    phone: mockEmployer.phone,
-    address: mockEmployer.address,
-    industry: mockEmployer.industry,
-    companySize: mockEmployer.companySize,
+    companyName: "",
+    contactPerson: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "Delhi",
+    industry: "Commercial",
+    companySize: "11-50",
   });
 
   const [passwords, setPasswords] = useState({
@@ -43,14 +45,57 @@ const Settings = () => {
     marketing: false,
   });
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await apiRequest<AppEmployerProfile>('/employers/profile');
+        if (res.success && res.data) {
+          setCompanyInfo({
+            companyName: res.data.companyName || "",
+            contactPerson: res.data.contactPerson || "",
+            email: res.data.user?.email || "",
+            phone: res.data.user?.phone || "",
+            address: res.data.address || "",
+            city: res.data.city || "Delhi",
+            industry: res.data.industry || "Commercial",
+            companySize: res.data.companySize || "11-50",
+          });
+        }
+      } catch {
+        // fallback
+      }
+    };
+    fetchProfile();
+  }, []);
+
   const handleSaveCompany = async () => {
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    toast({
-      title: "Settings Saved",
-      description: "Your company information has been updated.",
-    });
+    try {
+      await apiRequest('/employers/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          companyName: companyInfo.companyName,
+          contactPerson: companyInfo.contactPerson,
+          address: companyInfo.address,
+          city: companyInfo.city,
+          industry: companyInfo.industry,
+          companySize: companyInfo.companySize,
+        }),
+      });
+      toast({
+        title: "Settings Saved",
+        description: "Your company information has been updated.",
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Could not update company profile.";
+      toast({
+        title: "Save Failed",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -63,12 +108,28 @@ const Settings = () => {
       });
       return;
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast({
-      title: "Password Updated",
-      description: "Your password has been changed successfully.",
-    });
-    setPasswords({ current: "", new: "", confirm: "" });
+
+    try {
+      await apiRequest('/auth/change-password', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          currentPassword: passwords.current,
+          newPassword: passwords.new,
+        }),
+      });
+      toast({
+        title: "Password Updated",
+        description: "Your password has been changed successfully.",
+      });
+      setPasswords({ current: "", new: "", confirm: "" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Could not change password.";
+      toast({
+        title: "Password Update Failed",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -116,27 +177,27 @@ const Settings = () => {
             <div>
               <Label htmlFor="email" className="mb-2 block flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />
-                Email Address
+                Email Address (Read-only)
               </Label>
               <Input
                 id="email"
                 type="email"
+                disabled
                 value={companyInfo.email}
-                onChange={(e) => setCompanyInfo({ ...companyInfo, email: e.target.value })}
-                className="h-12"
+                className="h-12 bg-muted cursor-not-allowed"
               />
             </div>
 
             <div>
               <Label htmlFor="phone" className="mb-2 block flex items-center gap-2">
                 <Phone className="h-4 w-4 text-primary" />
-                Phone Number
+                Phone Number (Read-only)
               </Label>
               <Input
                 id="phone"
+                disabled
                 value={companyInfo.phone}
-                onChange={(e) => setCompanyInfo({ ...companyInfo, phone: e.target.value })}
-                className="h-12"
+                className="h-12 bg-muted cursor-not-allowed"
               />
             </div>
 
@@ -196,6 +257,7 @@ const Settings = () => {
               <Input
                 id="currentPassword"
                 type="password"
+                required
                 value={passwords.current}
                 onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
                 className="h-12 max-w-md"
@@ -206,6 +268,7 @@ const Settings = () => {
               <Input
                 id="newPassword"
                 type="password"
+                required
                 value={passwords.new}
                 onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
                 className="h-12 max-w-md"
@@ -216,6 +279,7 @@ const Settings = () => {
               <Input
                 id="confirmPassword"
                 type="password"
+                required
                 value={passwords.confirm}
                 onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
                 className="h-12 max-w-md"
@@ -246,57 +310,7 @@ const Settings = () => {
                 }
               />
             </div>
-            <div className="flex items-center justify-between py-2 border-t border-border">
-              <div>
-                <p className="font-medium text-foreground">Application Status Updates</p>
-                <p className="text-sm text-muted-foreground">Notifications for status changes</p>
-              </div>
-              <Switch
-                checked={notifications.applicationStatus}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, applicationStatus: checked })
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between py-2 border-t border-border">
-              <div>
-                <p className="font-medium text-foreground">Weekly Digest</p>
-                <p className="text-sm text-muted-foreground">Summary of activity each week</p>
-              </div>
-              <Switch
-                checked={notifications.weeklyDigest}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, weeklyDigest: checked })
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between py-2 border-t border-border">
-              <div>
-                <p className="font-medium text-foreground">Marketing Emails</p>
-                <p className="text-sm text-muted-foreground">Tips and updates from Adroit Tech Services</p>
-              </div>
-              <Switch
-                checked={notifications.marketing}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, marketing: checked })
-                }
-              />
-            </div>
           </div>
-        </div>
-
-        {/* Danger Zone */}
-        <div className="bg-card rounded-xl border-2 border-destructive/30 p-6">
-          <h2 className="font-display text-xl font-bold text-destructive mb-4 flex items-center gap-2">
-            <Trash2 className="h-5 w-5" />
-            Danger Zone
-          </h2>
-          <p className="text-muted-foreground mb-4">
-            Once you delete your account, there is no going back. Please be certain.
-          </p>
-          <Button variant="destructive">
-            Delete Account
-          </Button>
         </div>
       </div>
     </EmployerLayout>
