@@ -8,11 +8,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, Phone, Shield, ChevronDown, User, Briefcase, LogIn } from "lucide-react";
+import { Menu, X, Phone, ChevronDown, User, Briefcase, LogIn, LogOut, LayoutDashboard, FileText, Bookmark, ShieldCheck } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const mainWebsiteUrl = import.meta.env.VITE_MAIN_WEBSITE_URL || "https://adroit-tech-frontend.vercel.app";
 
@@ -85,36 +87,95 @@ const Header = () => {
             <span className="text-sm font-medium">+91 1234567890</span>
           </a>
           
-          <Link to="/login">
-            <Button variant="ghost" size="sm" className="text-secondary-foreground hover:text-primary">
-              <LogIn className="h-4 w-4 mr-2" />
-              Login
-            </Button>
-          </Link>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="cta" size="lg">
-                Register Now
-                <ChevronDown className="h-4 w-4 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-popover">
-              <DropdownMenuItem asChild>
-                <Link to="/register/jobseeker" className="flex items-center cursor-pointer">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="text-secondary-foreground border-secondary-foreground/30">
                   <User className="h-4 w-4 mr-2" />
-                  Register as Job Seeker
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/register/employer" className="flex items-center cursor-pointer">
-                  <Briefcase className="h-4 w-4 mr-2" />
-                  Register as Employer
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  {user.email || user.phone || 'Account'}
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-popover">
+                {user.role === 'JOB_SEEKER' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center cursor-pointer">
+                        <User className="h-4 w-4 mr-2" />
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/user/applications" className="flex items-center cursor-pointer">
+                        <FileText className="h-4 w-4 mr-2" />
+                        My Applications
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/user/saved-jobs" className="flex items-center cursor-pointer">
+                        <Bookmark className="h-4 w-4 mr-2" />
+                        Saved Jobs
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {user.role === 'EMPLOYER' && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/employer/dashboard" className="flex items-center cursor-pointer">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Employer Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {user.role === 'ADMIN' && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin/dashboard" className="flex items-center cursor-pointer text-destructive">
+                      <ShieldCheck className="h-4 w-4 mr-2" />
+                      Admin Console
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="flex items-center cursor-pointer text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="ghost" size="sm" className="text-secondary-foreground hover:text-primary">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Login
+                </Button>
+              </Link>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="cta" size="lg">
+                    Register Now
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-popover">
+                  <DropdownMenuItem asChild>
+                    <Link to="/register/jobseeker" className="flex items-center cursor-pointer">
+                      <User className="h-4 w-4 mr-2" />
+                      Register as Job Seeker
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/register/employer" className="flex items-center cursor-pointer">
+                      <Briefcase className="h-4 w-4 mr-2" />
+                      Register as Employer
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -157,24 +218,59 @@ const Header = () => {
               )
             )}
             <div className="pt-4 border-t border-border/20 mt-2 space-y-2">
-              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="outline" size="lg" className="w-full text-secondary-foreground border-secondary-foreground/30">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Login
-                </Button>
-              </Link>
-              <Link to="/register/jobseeker" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="cta" size="lg" className="w-full">
-                  <User className="h-4 w-4 mr-2" />
-                  Register as Job Seeker
-                </Button>
-              </Link>
-              <Link to="/register/employer" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="ctaSecondary" size="lg" className="w-full">
-                  <Briefcase className="h-4 w-4 mr-2" />
-                  Register as Employer
-                </Button>
-              </Link>
+              {user ? (
+                <>
+                  {user.role === 'JOB_SEEKER' && (
+                    <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="cta" size="lg" className="w-full">
+                        <User className="h-4 w-4 mr-2" />
+                        My Profile Workspace
+                      </Button>
+                    </Link>
+                  )}
+                  {user.role === 'EMPLOYER' && (
+                    <Link to="/employer/dashboard" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="cta" size="lg" className="w-full">
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Employer Dashboard
+                      </Button>
+                    </Link>
+                  )}
+                  {user.role === 'ADMIN' && (
+                    <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="destructive" size="lg" className="w-full">
+                        <ShieldCheck className="h-4 w-4 mr-2" />
+                        Admin Console
+                      </Button>
+                    </Link>
+                  )}
+                  <Button variant="outline" size="lg" className="w-full text-destructive border-destructive/30" onClick={() => { logout(); setIsMenuOpen(false); }}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="outline" size="lg" className="w-full text-secondary-foreground border-secondary-foreground/30">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Login
+                    </Button>
+                  </Link>
+                  <Link to="/register/jobseeker" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="cta" size="lg" className="w-full">
+                      <User className="h-4 w-4 mr-2" />
+                      Register as Job Seeker
+                    </Button>
+                  </Link>
+                  <Link to="/register/employer" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ctaSecondary" size="lg" className="w-full">
+                      <Briefcase className="h-4 w-4 mr-2" />
+                      Register as Employer
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         </div>

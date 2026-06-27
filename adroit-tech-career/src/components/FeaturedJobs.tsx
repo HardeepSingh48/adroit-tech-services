@@ -1,11 +1,34 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import JobCard from "@/components/JobCard";
-import { jobs } from "@/data/jobs";
+import { jobs as mockJobs } from "@/data/jobs";
+import { apiRequest } from "@/lib/api";
+import { AppJob } from "@/types/app.types";
 import { ArrowRight } from "lucide-react";
 
 const FeaturedJobs = () => {
-  const featuredJobs = jobs.filter((job) => job.featured).slice(0, 6);
+  const [featuredJobs, setFeaturedJobs] = useState<AppJob[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const res = await apiRequest<AppJob[]>('/jobs/featured');
+        if (res.success && res.data && res.data.length > 0) {
+          setFeaturedJobs(res.data);
+        } else {
+          setFeaturedJobs(mockJobs.filter((job) => job.featured).slice(0, 6));
+        }
+      } catch {
+        setFeaturedJobs(mockJobs.filter((job) => job.featured).slice(0, 6));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFeatured();
+  }, []);
 
   return (
     <section className="py-16 md:py-24 bg-background">
@@ -21,11 +44,17 @@ const FeaturedJobs = () => {
         </div>
 
         {/* Jobs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {featuredJobs.map((job) => (
-            <JobCard key={job.id} job={job} featured />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            {featuredJobs.map((job) => (
+              <JobCard key={job.id} job={job} featured />
+            ))}
+          </div>
+        )}
 
         {/* View All Button */}
         <div className="text-center">

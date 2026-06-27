@@ -1,11 +1,12 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import EmployerLayout from "@/components/employer/EmployerLayout";
 import StatsCard from "@/components/employer/StatsCard";
 import ApplicationCard from "@/components/employer/ApplicationCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockApplications } from "@/data/employers";
-import { jobs } from "@/data/jobs";
+import { apiRequest } from "@/lib/api";
+import { AppJob, AppApplication } from "@/types/app.types";
 import {
   Briefcase,
   Users,
@@ -14,35 +15,55 @@ import {
   Plus,
   ArrowRight,
   Eye,
-  Edit,
-  XCircle,
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+
+interface StatsData {
+  activeJobs: number;
+  totalApplications: number;
+}
 
 const Dashboard = () => {
-  const stats = {
-    activeJobs: 8,
-    totalApplications: mockApplications.length,
-    shortlisted: mockApplications.filter((a) => a.status === "shortlisted").length,
-    hiredThisMonth: mockApplications.filter((a) => a.status === "hired").length,
-  };
+  const [stats, setStats] = useState({
+    activeJobs: 0,
+    totalApplications: 0,
+    shortlisted: 0,
+    hiredThisMonth: 0,
+  });
+  const [recentApplications, setRecentApplications] = useState<AppApplication[]>([]);
+  const [activeJobs, setActiveJobs] = useState<AppJob[]>([]);
 
-  const recentApplications = mockApplications.slice(0, 4);
-  const activeJobs = jobs.slice(0, 3);
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [statsRes, jobsRes, appsRes] = await Promise.all([
+          apiRequest<StatsData>('/employers/dashboard/stats').catch(() => null),
+          apiRequest<AppJob[]>('/employers/jobs').catch(() => null),
+          apiRequest<AppApplication[]>('/employers/applications').catch(() => null),
+        ]);
 
-  const handleShortlist = (id: string) => {
-    toast({
-      title: "Candidate Shortlisted",
-      description: "The candidate has been moved to shortlisted.",
-    });
-  };
+        if (statsRes?.success && statsRes.data) {
+          setStats({
+            activeJobs: statsRes.data.activeJobs || 0,
+            totalApplications: statsRes.data.totalApplications || 0,
+            shortlisted: 0,
+            hiredThisMonth: 0,
+          });
+        }
 
-  const handleReject = (id: string) => {
-    toast({
-      title: "Application Rejected",
-      description: "The application has been rejected.",
-    });
-  };
+        if (jobsRes?.success && jobsRes.data) {
+          setActiveJobs(jobsRes.data.slice(0, 3));
+        }
+
+        if (appsRes?.success && appsRes.data) {
+          setRecentApplications(appsRes.data.slice(0, 4));
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   return (
     <EmployerLayout>
@@ -51,7 +72,7 @@ const Dashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
-              Welcome back, ABC Securities!
+              Welcome back!
             </h1>
             <p className="text-muted-foreground mt-1">
               Here's what's happening with your job listings.
@@ -71,13 +92,11 @@ const Dashboard = () => {
             title="Active Jobs"
             value={stats.activeJobs}
             icon={Briefcase}
-            trend={{ value: 12, isPositive: true }}
           />
           <StatsCard
             title="Total Applications"
             value={stats.totalApplications}
             icon={Users}
-            trend={{ value: 25, isPositive: true }}
           />
           <StatsCard
             title="Shortlisted"
@@ -88,7 +107,6 @@ const Dashboard = () => {
             title="Hired This Month"
             value={stats.hiredThisMonth}
             icon={Trophy}
-            trend={{ value: 8, isPositive: true }}
           />
         </div>
 
@@ -106,25 +124,36 @@ const Dashboard = () => {
                 </Button>
               </Link>
             </div>
-            <div className="space-y-4">
-              {recentApplications.map((application) => (
-                <ApplicationCard
-                  key={application.id}
-                  application={application}
-                  jobTitle={jobs.find((j) => j.id === application.jobId)?.title}
-                  onView={() => {}}
-                  onShortlist={() => handleShortlist(application.id)}
-                  onReject={() => handleReject(application.id)}
-                />
-              ))}
-            </div>
+            {recentApplications.length > 0 ? (
+              <div className="space-y-4">
+                {recentApplications.map((application) => (
+                  <ApplicationCard
+                    key={application.id}
+                    application={{
+                      id: application.id,
+                      candidateName: application.jobSeeker?.fullName || 'Candidate',
+                      candidateEmail: application.jobSeeker?.user?.email || '',
+                      candidatePhone: application.jobSeeker?.user?.phone || '',
+                      status: application.status.toLowerCase(),
+                      appliedDate: new Date(application.createdAt).toLocaleDateString(),
+                    }}
+                    jobTitle={application.job?.title}
+                    onView={() => {}}
+                    onShortlist={() => {}}
+                    onReject={() => {}}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground py-4 text-center">No recent applications found.</p>
+            )}
           </div>
 
           {/* Active Jobs */}
           <div className="bg-card rounded-xl border-2 border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-xl font-bold text-foreground">
-                Active Jobs
+                My Posted Jobs
               </h2>
               <Link to="/employer/jobs">
                 <Button variant="ghost" size="sm" className="text-primary">
@@ -133,51 +162,46 @@ const Dashboard = () => {
                 </Button>
               </Link>
             </div>
-            <div className="space-y-4">
-              {activeJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="p-4 rounded-lg border border-border hover:border-primary/30 transition-all"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-display font-bold text-foreground">
-                        {job.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {job.location} • {job.type}
-                      </p>
+            {activeJobs.length > 0 ? (
+              <div className="space-y-4">
+                {activeJobs.map((job) => (
+                  <div
+                    key={job.id}
+                    className="p-4 rounded-lg border border-border hover:border-primary/30 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-display font-bold text-foreground">
+                          {job.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {job.city} • {job.type}
+                        </p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800 border-green-200">
+                        {job.status}
+                      </Badge>
                     </div>
-                    <Badge className="bg-green-100 text-green-800 border-green-200">
-                      Active
-                    </Badge>
+                    <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        {job.applicationCount || 0} applications
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      <Link to={`/jobs/${job.id}`}>
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Listing
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {Math.floor(Math.random() * 20) + 5} applications
-                    </span>
-                    <span>Posted: {job.postedDate}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-3">
-                    <Link to={`/jobs/${job.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                    </Link>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Close
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground py-4 text-center">No active jobs posted yet.</p>
+            )}
           </div>
         </div>
       </div>

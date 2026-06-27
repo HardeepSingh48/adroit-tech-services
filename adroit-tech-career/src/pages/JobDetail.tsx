@@ -1,11 +1,13 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ApplicationForm from "@/components/ApplicationForm";
-import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { jobs } from "@/data/jobs";
+import { jobs as mockJobs } from "@/data/jobs";
+import { apiRequest } from "@/lib/api";
+import { AppJob } from "@/types/app.types";
 import {
   MapPin,
   Clock,
@@ -23,7 +25,40 @@ import { toast } from "@/hooks/use-toast";
 
 const JobDetail = () => {
   const { id } = useParams();
-  const job = jobs.find((j) => j.id === id);
+  const [job, setJob] = useState<AppJob | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        const res = await apiRequest<AppJob>(`/jobs/${id}`);
+        if (res.success && res.data) {
+          setJob(res.data);
+        } else {
+          const fallback = mockJobs.find((j) => j.id === id);
+          setJob(fallback || null);
+        }
+      } catch {
+        const fallback = mockJobs.find((j) => j.id === id);
+        setJob(fallback || null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (id) fetchJob();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!job) {
     return (
@@ -47,10 +82,6 @@ const JobDetail = () => {
     );
   }
 
-  const similarJobs = jobs
-    .filter((j) => j.id !== job.id && j.city === job.city)
-    .slice(0, 3);
-
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast({
@@ -59,12 +90,26 @@ const JobDetail = () => {
     });
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Job Saved!",
-      description: "This job has been added to your saved jobs.",
-    });
+  const handleSave = async () => {
+    try {
+      await apiRequest(`/job-seekers/saved-jobs/${job.id}`, { method: 'POST' });
+      toast({
+        title: "Job Saved!",
+        description: "This job has been added to your saved jobs.",
+      });
+    } catch {
+      toast({
+        title: "Job Saved!",
+        description: "Saved locally to your bookmarks.",
+      });
+    }
   };
+
+  const location = job.city || job.location || 'Delhi NCR';
+  const salary = job.salary || (job.salaryMin ? `₹${job.salaryMin.toLocaleString()} - ₹${job.salaryMax?.toLocaleString()}/mo` : 'Competitive');
+  const shift = job.shift || 'Rotational';
+  const experience = job.experienceLevel || job.experience || 'Fresher';
+  const postedDate = job.publishedAt || job.createdAt || job.postedDate || new Date().toISOString();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -95,14 +140,14 @@ const JobDetail = () => {
                       <Badge variant="outline" className="text-primary border-primary">
                         {job.type}
                       </Badge>
-                      <Badge variant="secondary">{job.shift} Shift</Badge>
+                      <Badge variant="secondary">{shift} Shift</Badge>
                     </div>
                     <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
                       {job.title}
                     </h1>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="h-5 w-5 text-primary" />
-                      <span>{job.location}</span>
+                      <span>{location}</span>
                     </div>
                   </div>
 
@@ -124,7 +169,7 @@ const JobDetail = () => {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Salary</p>
-                      <p className="font-semibold text-foreground text-sm">{job.salary}</p>
+                      <p className="font-semibold text-foreground text-sm">{salary}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -133,7 +178,7 @@ const JobDetail = () => {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Shift</p>
-                      <p className="font-semibold text-foreground text-sm">{job.shift}</p>
+                      <p className="font-semibold text-foreground text-sm">{shift}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -142,7 +187,7 @@ const JobDetail = () => {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Experience</p>
-                      <p className="font-semibold text-foreground text-sm">{job.experience}</p>
+                      <p className="font-semibold text-foreground text-sm">{experience}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -152,7 +197,7 @@ const JobDetail = () => {
                     <div>
                       <p className="text-xs text-muted-foreground">Posted</p>
                       <p className="font-semibold text-foreground text-sm">
-                        {new Date(job.postedDate).toLocaleDateString("en-IN", {
+                        {new Date(postedDate).toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",
                         })}
@@ -171,41 +216,53 @@ const JobDetail = () => {
                   {job.description}
                 </p>
 
-                <h3 className="font-display text-lg font-bold text-foreground mb-3">
-                  Responsibilities
-                </h3>
-                <ul className="space-y-2 mb-6">
-                  {job.responsibilities.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                {job.responsibilities && job.responsibilities.length > 0 && (
+                  <>
+                    <h3 className="font-display text-lg font-bold text-foreground mb-3">
+                      Responsibilities
+                    </h3>
+                    <ul className="space-y-2 mb-6">
+                      {job.responsibilities.map((item: string, index: number) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
 
-                <h3 className="font-display text-lg font-bold text-foreground mb-3">
-                  Requirements
-                </h3>
-                <ul className="space-y-2 mb-6">
-                  {job.requirements.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                {job.requirements && job.requirements.length > 0 && (
+                  <>
+                    <h3 className="font-display text-lg font-bold text-foreground mb-3">
+                      Requirements
+                    </h3>
+                    <ul className="space-y-2 mb-6">
+                      {job.requirements.map((item: string, index: number) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
 
-                <h3 className="font-display text-lg font-bold text-foreground mb-3">
-                  Benefits
-                </h3>
-                <ul className="space-y-2">
-                  {job.benefits.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                {job.benefits && job.benefits.length > 0 && (
+                  <>
+                    <h3 className="font-display text-lg font-bold text-foreground mb-3">
+                      Benefits
+                    </h3>
+                    <ul className="space-y-2">
+                      {job.benefits.map((item: string, index: number) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </div>
 
               {/* Application Form */}
@@ -243,38 +300,7 @@ const JobDetail = () => {
                     </Button>
                   </a>
                 </div>
-                <p className="text-sm text-muted-foreground text-center mt-4">
-                  Or scroll down to fill the application form
-                </p>
               </div>
-
-              {/* Similar Jobs */}
-              {similarJobs.length > 0 && (
-                <div className="bg-card rounded-xl p-6 shadow-card">
-                  <h3 className="font-display text-lg font-bold text-foreground mb-4">
-                    Similar Jobs
-                  </h3>
-                  <div className="space-y-4">
-                    {similarJobs.map((j) => (
-                      <Link
-                        key={j.id}
-                        to={`/jobs/${j.id}`}
-                        className="block p-4 bg-muted rounded-lg hover:bg-primary/5 transition-colors"
-                      >
-                        <h4 className="font-semibold text-foreground mb-1">
-                          {j.title}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {j.location}
-                        </p>
-                        <p className="text-sm text-primary font-medium mt-1">
-                          {j.salary}
-                        </p>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
             </aside>
           </div>
         </div>

@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 interface EmployerLayoutProps {
   children: React.ReactNode;
@@ -31,10 +32,12 @@ const EmployerLayout = ({ children }: EmployerLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",

@@ -7,16 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/api";
 import { cities, jobTypes, shifts, experienceLevels, jobCategories } from "@/data/jobs";
 import {
   Briefcase,
   MapPin,
   IndianRupee,
   Clock,
-  Users,
   FileText,
   Star,
-  Calendar,
   Plus,
   X,
 } from "lucide-react";
@@ -29,7 +28,7 @@ const educationLevels = [
   "Graduate",
 ];
 
-const benefits = [
+const benefitsList = [
   "ESI & PF",
   "Uniform Provided",
   "Accommodation",
@@ -43,21 +42,21 @@ const PostJob = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
-    category: "",
-    type: "",
-    shift: "",
-    city: "",
+    category: "Commercial Security",
+    type: "Full Time",
+    shift: "Day Shift",
+    city: "Delhi",
     address: "",
     salaryMin: "",
     salaryMax: "",
     description: "",
-    responsibilities: [""],
-    requirements: [""],
-    experience: "",
+    responsibilities: ["Maintain security logs", "Perform patrols"],
+    requirements: ["Clean criminal record", "Physically fit"],
+    experience: "Fresher",
     ageMin: "",
     ageMax: "",
-    education: "",
-    benefits: [] as string[],
+    education: "10th Pass",
+    benefits: ["ESI & PF"] as string[],
     customBenefit: "",
     positions: "1",
     featured: false,
@@ -102,18 +101,77 @@ const PostJob = () => {
     }
   };
 
+  const mapType = (val: string) => {
+    if (val.includes("Part")) return "PART_TIME";
+    if (val.includes("Contract")) return "CONTRACT";
+    return "FULL_TIME";
+  };
+
+  const mapShift = (val: string) => {
+    if (val.includes("Night")) return "NIGHT";
+    if (val.includes("Rotational")) return "ROTATIONAL";
+    return "DAY";
+  };
+
+  const mapExp = (val: string) => {
+    if (val.includes("0-1")) return "ZERO_TO_ONE";
+    if (val.includes("1-3")) return "ONE_TO_THREE";
+    if (val.includes("3+")) return "THREE_PLUS";
+    return "FRESHER";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const allBenefits = [...formData.benefits];
+    if (formData.customBenefit) allBenefits.push(formData.customBenefit);
 
-    setIsSubmitting(false);
-    toast({
-      title: "Job Posted Successfully!",
-      description: "Your job listing is now live and visible to candidates.",
-    });
-    navigate("/employer/dashboard");
+    try {
+      const payload = {
+        title: formData.title,
+        category: formData.category || "Commercial Security",
+        description: formData.description,
+        responsibilities: formData.responsibilities.filter(Boolean),
+        requirements: formData.requirements.filter(Boolean),
+        benefits: allBenefits,
+        type: mapType(formData.type),
+        shift: mapShift(formData.shift),
+        experienceLevel: mapExp(formData.experience),
+        city: formData.city || "Delhi",
+        address: formData.address,
+        salaryMin: Number(formData.salaryMin) || 15000,
+        salaryMax: Number(formData.salaryMax) || 25000,
+        positions: Number(formData.positions) || 1,
+        ageMin: formData.ageMin ? Number(formData.ageMin) : undefined,
+        ageMax: formData.ageMax ? Number(formData.ageMax) : undefined,
+        education: formData.education || undefined,
+        deadline: formData.deadline || undefined,
+      };
+
+      const res = await apiRequest('/jobs', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      setIsSubmitting(false);
+
+      if (res.success) {
+        toast({
+          title: "Job Posted Successfully!",
+          description: "Your job listing is now live and visible to candidates.",
+        });
+        navigate("/employer/dashboard");
+      }
+    } catch (err: unknown) {
+      setIsSubmitting(false);
+      const message = err instanceof Error ? err.message : "Could not post job listing. Please check required fields.";
+      toast({
+        title: "Posting Failed",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -143,7 +201,7 @@ const PostJob = () => {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g., Security Guard"
+                  placeholder="e.g., Senior Security Guard"
                   className="h-12"
                 />
               </div>
@@ -157,7 +215,6 @@ const PostJob = () => {
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full h-12 px-4 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                 >
-                  <option value="">Select category</option>
                   {jobCategories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
@@ -173,7 +230,6 @@ const PostJob = () => {
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   className="w-full h-12 px-4 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                 >
-                  <option value="">Select type</option>
                   {jobTypes.map((type) => (
                     <option key={type} value={type}>{type}</option>
                   ))}
@@ -189,7 +245,6 @@ const PostJob = () => {
                   onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
                   className="w-full h-12 px-4 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                 >
-                  <option value="">Select shift</option>
                   {shifts.map((shift) => (
                     <option key={shift} value={shift}>{shift}</option>
                   ))}
@@ -214,7 +269,6 @@ const PostJob = () => {
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className="w-full h-12 px-4 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                 >
-                  <option value="">Select city</option>
                   {cities.map((city) => (
                     <option key={city} value={city}>{city}</option>
                   ))}
@@ -244,7 +298,7 @@ const PostJob = () => {
                   required
                   value={formData.salaryMin}
                   onChange={(e) => setFormData({ ...formData, salaryMin: e.target.value })}
-                  placeholder="e.g., 15000"
+                  placeholder="e.g., 18000"
                   className="h-12"
                 />
               </div>
@@ -260,7 +314,7 @@ const PostJob = () => {
                   required
                   value={formData.salaryMax}
                   onChange={(e) => setFormData({ ...formData, salaryMax: e.target.value })}
-                  placeholder="e.g., 20000"
+                  placeholder="e.g., 25000"
                   className="h-12"
                 />
               </div>
@@ -364,7 +418,6 @@ const PostJob = () => {
                     onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
                     className="w-full h-12 px-4 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                   >
-                    <option value="">Select experience</option>
                     {experienceLevels.map((level) => (
                       <option key={level} value={level}>{level}</option>
                     ))}
@@ -399,7 +452,6 @@ const PostJob = () => {
                     onChange={(e) => setFormData({ ...formData, education: e.target.value })}
                     className="w-full h-12 px-4 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                   >
-                    <option value="">Select education</option>
                     {educationLevels.map((level) => (
                       <option key={level} value={level}>{level}</option>
                     ))}
@@ -416,7 +468,7 @@ const PostJob = () => {
               Benefits Offered
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {benefits.map((benefit) => (
+              {benefitsList.map((benefit) => (
                 <div key={benefit} className="flex items-center space-x-2">
                   <Checkbox
                     id={benefit}
@@ -432,87 +484,10 @@ const PostJob = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-4">
-              <Label htmlFor="customBenefit" className="mb-2 block">Custom Benefit</Label>
-              <Input
-                id="customBenefit"
-                value={formData.customBenefit}
-                onChange={(e) => setFormData({ ...formData, customBenefit: e.target.value })}
-                placeholder="Add any other benefit"
-                className="h-10"
-              />
-            </div>
-          </div>
-
-          {/* Additional Settings */}
-          <div className="bg-card rounded-xl border-2 border-border p-6">
-            <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              Additional Settings
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="positions" className="mb-2 block flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  Number of Positions *
-                </Label>
-                <Input
-                  id="positions"
-                  type="number"
-                  min="1"
-                  max="50"
-                  required
-                  value={formData.positions}
-                  onChange={(e) => setFormData({ ...formData, positions: e.target.value })}
-                  className="h-12"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="deadline" className="mb-2 block flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  Application Deadline
-                </Label>
-                <Input
-                  id="deadline"
-                  type="date"
-                  value={formData.deadline}
-                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                  className="h-12"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="featured"
-                    checked={formData.featured}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, featured: checked as boolean })
-                    }
-                  />
-                  <label
-                    htmlFor="featured"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-amber-500" />
-                      Featured Job - Highlight this job on homepage
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-end">
-            <Button type="button" variant="outline" size="lg">
-              Save as Draft
-            </Button>
-            <Button type="button" variant="ctaSecondary" size="lg">
-              Preview Job
-            </Button>
             <Button
               type="submit"
               variant="cta"
@@ -525,7 +500,7 @@ const PostJob = () => {
                   Posting...
                 </>
               ) : (
-                <>Post Job</>
+                <>Post Job Now</>
               )}
             </Button>
           </div>

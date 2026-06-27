@@ -7,19 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import {
-  Shield,
   Mail,
   Lock,
   User,
   Building2,
-  Briefcase,
+  AlertCircle,
 } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [activeTab, setActiveTab] = useState<"jobseeker" | "employer">("jobseeker");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -29,22 +31,39 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage("");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const res = await login({
+        identifier: formData.email,
+        password: formData.password,
+      });
 
-    setIsSubmitting(false);
-    
-    toast({
-      title: "Login Successful!",
-      description: `Welcome back! Redirecting to ${activeTab === "employer" ? "dashboard" : "jobs"}...`,
-    });
+      setIsSubmitting(false);
 
-    // Redirect based on user type
-    if (activeTab === "employer") {
-      navigate("/employer/dashboard");
-    } else {
-      navigate("/jobs");
+      if (res.success) {
+        toast({
+          title: "Login Successful!",
+          description: `Welcome back! Redirecting...`,
+        });
+
+        if (res.data?.user?.role === "EMPLOYER" || activeTab === "employer") {
+          navigate("/employer/dashboard");
+        } else if (res.data?.user?.role === "ADMIN") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/jobs");
+        }
+      }
+    } catch (err: unknown) {
+      setIsSubmitting(false);
+      const message = err instanceof Error ? err.message : "Invalid credentials. Please try again.";
+      setErrorMessage(message);
+      toast({
+        title: "Login Failed",
+        description: message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -69,7 +88,13 @@ const Login = () => {
 
             {/* Login Card */}
             <div className="bg-card rounded-2xl p-6 md:p-8 shadow-card">
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "jobseeker" | "employer")} className="w-full">
+              {errorMessage && (
+                <div className="p-4 mb-6 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-3 text-destructive animate-fade-in">
+                  <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+                  <div className="text-sm font-medium leading-relaxed">{errorMessage}</div>
+                </div>
+              )}
+              <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as "jobseeker" | "employer"); setErrorMessage(""); }} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted">
                   <TabsTrigger 
                     value="jobseeker" 
@@ -136,12 +161,6 @@ const Login = () => {
                           Remember me
                         </label>
                       </div>
-                      <Link
-                        to="/forgot-password"
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Forgot Password?
-                      </Link>
                     </div>
 
                     <Button
@@ -175,15 +194,14 @@ const Login = () => {
                     <div>
                       <Label htmlFor="email-emp" className="flex items-center gap-2 mb-2">
                         <Mail className="h-4 w-4 text-primary" />
-                        Email Address
+                        Email Address / Phone
                       </Label>
                       <Input
                         id="email-emp"
-                        type="email"
                         required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="Enter your company email"
+                        placeholder="Enter your company email or phone"
                         className="border-border focus:border-primary h-12"
                       />
                     </div>
@@ -220,12 +238,6 @@ const Login = () => {
                           Remember me
                         </label>
                       </div>
-                      <Link
-                        to="/forgot-password"
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Forgot Password?
-                      </Link>
                     </div>
 
                     <Button

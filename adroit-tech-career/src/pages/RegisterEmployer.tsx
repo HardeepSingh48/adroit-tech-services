@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { industryTypes, companySizes } from "@/data/employers";
 import {
   Building2,
@@ -14,18 +15,17 @@ import {
   Mail,
   MapPin,
   Lock,
-  Upload,
   CheckCircle,
-  Shield,
-  Globe,
   FileText,
   Briefcase,
+  AlertCircle,
 } from "lucide-react";
 
 const RegisterEmployer = () => {
-  const navigate = useNavigate();
+  const { registerEmployer } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [formData, setFormData] = useState({
     companyName: "",
     contactPerson: "",
@@ -33,28 +33,53 @@ const RegisterEmployer = () => {
     phone: "",
     password: "",
     address: "",
+    city: "Delhi",
     industry: "",
     companySize: "",
     gstNumber: "",
     panNumber: "",
     website: "",
-    logo: null as File | null,
-    panCard: null as File | null,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage("");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const res = await registerEmployer({
+        companyName: formData.companyName,
+        contactPerson: formData.contactPerson,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        industry: formData.industry || "Commercial",
+        companySize: formData.companySize || "11-50",
+        address: formData.address,
+        city: formData.city || "Delhi",
+        gstNumber: formData.gstNumber || undefined,
+        panNumber: formData.panNumber || undefined,
+      });
 
-    setIsSubmitting(false);
-    setIsSuccess(true);
-    toast({
-      title: "Registration Successful!",
-      description: "Your employer account has been created. You can now post jobs.",
-    });
+      setIsSubmitting(false);
+
+      if (res.success) {
+        setIsSuccess(true);
+        toast({
+          title: "Registration Successful!",
+          description: "Your employer account has been created. You can now post jobs.",
+        });
+      }
+    } catch (err: unknown) {
+      setIsSubmitting(false);
+      const message = err instanceof Error ? err.message : "Could not complete employer registration.";
+      setErrorMessage(message);
+      toast({
+        title: "Registration Failed",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
 
   if (isSuccess) {
@@ -70,17 +95,12 @@ const RegisterEmployer = () => {
               Welcome, {formData.companyName}!
             </h1>
             <p className="text-muted-foreground mb-8">
-              Your employer account has been created successfully. Start posting jobs to find the best security professionals.
+              Your employer account has been created successfully. Please log in with your credentials to manage your company portal.
             </p>
             <div className="space-y-3">
               <Link to="/login">
                 <Button variant="cta" size="xl" className="w-full">
-                  Login to Post Jobs
-                </Button>
-              </Link>
-              <Link to="/jobs">
-                <Button variant="ctaSecondary" size="lg" className="w-full">
-                  View Job Listings
+                  Proceed to Login
                 </Button>
               </Link>
             </div>
@@ -113,6 +133,12 @@ const RegisterEmployer = () => {
             {/* Registration Form */}
             <div className="bg-card rounded-2xl p-6 md:p-10 shadow-card">
               <form onSubmit={handleSubmit} className="space-y-8">
+                {errorMessage && (
+                  <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-3 text-destructive animate-fade-in">
+                    <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+                    <div className="text-sm font-medium leading-relaxed">{errorMessage}</div>
+                  </div>
+                )}
                 {/* Company Information */}
                 <div>
                   <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
@@ -186,6 +212,20 @@ const RegisterEmployer = () => {
                     </div>
 
                     <div>
+                      <Label htmlFor="city" className="mb-2 block">
+                        City *
+                      </Label>
+                      <Input
+                        id="city"
+                        required
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        placeholder="e.g. Delhi, Gurgaon, Noida"
+                        className="border-border focus:border-primary h-12"
+                      />
+                    </div>
+
+                    <div>
                       <Label htmlFor="gstNumber" className="flex items-center gap-2 mb-2">
                         <FileText className="h-4 w-4 text-primary" />
                         GST Number
@@ -195,21 +235,6 @@ const RegisterEmployer = () => {
                         value={formData.gstNumber}
                         onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
                         placeholder="Enter GST number (optional)"
-                        className="border-border focus:border-primary h-12"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="website" className="flex items-center gap-2 mb-2">
-                        <Globe className="h-4 w-4 text-primary" />
-                        Company Website
-                      </Label>
-                      <Input
-                        id="website"
-                        type="url"
-                        value={formData.website}
-                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                        placeholder="https://example.com"
                         className="border-border focus:border-primary h-12"
                       />
                     </div>
@@ -287,57 +312,6 @@ const RegisterEmployer = () => {
                   </div>
                 </div>
 
-                {/* Documents Upload */}
-                <div>
-                  <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                    <Upload className="h-5 w-5 text-primary" />
-                    Documents (Optional)
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label className="mb-2 block">Company Logo</Label>
-                      <div className="border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary transition-colors cursor-pointer">
-                        <input
-                          type="file"
-                          accept=".jpg,.jpeg,.png"
-                          onChange={(e) =>
-                            setFormData({ ...formData, logo: e.target.files?.[0] || null })
-                          }
-                          className="hidden"
-                          id="logo-upload"
-                        />
-                        <label htmlFor="logo-upload" className="cursor-pointer">
-                          <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-xs text-muted-foreground">
-                            {formData.logo ? formData.logo.name : "Upload logo (JPG, PNG)"}
-                          </p>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="mb-2 block">PAN Card</Label>
-                      <div className="border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary transition-colors cursor-pointer">
-                        <input
-                          type="file"
-                          accept=".jpg,.jpeg,.png,.pdf"
-                          onChange={(e) =>
-                            setFormData({ ...formData, panCard: e.target.files?.[0] || null })
-                          }
-                          className="hidden"
-                          id="pan-upload"
-                        />
-                        <label htmlFor="pan-upload" className="cursor-pointer">
-                          <FileText className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-xs text-muted-foreground">
-                            {formData.panCard ? formData.panCard.name : "Upload PAN (PDF, JPG)"}
-                          </p>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Submit */}
                 <Button
                   type="submit"
@@ -355,17 +329,6 @@ const RegisterEmployer = () => {
                     <>Create Employer Account</>
                   )}
                 </Button>
-
-                <p className="text-sm text-muted-foreground text-center">
-                  By registering, you agree to our{" "}
-                  <Link to="/terms" className="text-primary hover:underline">
-                    Terms & Conditions
-                  </Link>{" "}
-                  and{" "}
-                  <Link to="/privacy" className="text-primary hover:underline">
-                    Privacy Policy
-                  </Link>
-                </p>
 
                 {/* Job Seeker Link */}
                 <div className="pt-4 border-t border-border">
