@@ -82,7 +82,7 @@ const RegisterJobSeeker = () => {
             {/* Header */}
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-                <Shield className="h-8 w-8 text-primary" />
+                <img src="/assets/logos/ATS shield icon 512.png" alt="Adroit Tech Logo" className="h-10 w-auto object-contain" />
               </div>
               <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
                 Register as Job Seeker

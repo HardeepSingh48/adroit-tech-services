@@ -33,7 +33,7 @@ const Header = () => {
         <Link to="/" className="flex items-center gap-2 md:gap-3">
           <div className="relative">
             <img
-              src="/assets/logos/ATS_logo.png"
+              src="/assets/logos/ATS shield icon 512.png"
               alt="Adroit Tech Logo"
               className="h-8 w-auto md:h-10 transition-all duration-300"
             />

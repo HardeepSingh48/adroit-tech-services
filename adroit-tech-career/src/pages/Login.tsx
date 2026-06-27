@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,7 +57,7 @@ const Login = () => {
             {/* Header */}
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/20 rounded-full mb-4">
-                <Shield className="h-8 w-8 text-primary" />
+                <img src="/assets/logos/ATS shield icon 512.png" alt="Adroit Tech Logo" className="h-10 w-auto object-contain" />
               </div>
               <h1 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
                 Welcome Back
@@ -259,7 +258,6 @@ const Login = () => {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

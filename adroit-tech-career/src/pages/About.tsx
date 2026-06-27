@@ -91,7 +91,7 @@ const About = () => {
                 </div>
               </div>
               <div className="relative">
-                <div className="bg-gradient-to-br from-primary/20 to-secondary rounded-2xl p-8 md:p-12">
+                <div className="bg-primary/20 rounded-2xl p-8 md:p-12">
                   <Shield className="h-32 w-32 text-primary mx-auto mb-6 opacity-80" />
                   <h3 className="font-display text-2xl font-bold text-primary-foreground text-center mb-4">
                     "Securing Tomorrow, Today"

@@ -42,10 +42,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-2xl font-bold mb-4">
-              <span className="text-white">Adroit Tech</span>
-              <span className="text-secondary"> Services</span>
-            </h3>
+            <div className="flex items-center gap-3 mb-4">
+              <img src="/assets/logos/ATS shield icon 512.png" alt="Adroit Tech Logo" className="h-10 w-auto" />
+              <h3 className="text-2xl font-bold">
+                <span className="text-white">Adroit Tech</span>
+                <span className="text-secondary"> Services</span>
+              </h3>
+            </div>
             <p className="text-primary-foreground/80 mb-4">
               Leading provider of professional security services with over 25 years of experience across India.
             </p>
